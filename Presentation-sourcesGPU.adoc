@@ -1,0 +1,19 @@
+= Exemples CUDA
+Patrick Martineau <patrick.martineau@univ-tours.fr>
+v1.0, 2018-03-30
+:sectnums:
+:imagesdir: ./images
+:sourcesdir: ./sources
+
+:toc:
+
+
+== Les bases
+
+L'environnement de développement pour CUDA doit être installé sur votre ordinateur, équipé d'une carte NVIDIA.
+
+=== Vérification de la compilation par votre compilateur, exemple avec nvcc
+
+Lien sur <<{sourcesdir}/hello_world.cu,hello_world.cu>>.
+[source,C]
+include::{sourcesdir}/hello_world.cu[]
