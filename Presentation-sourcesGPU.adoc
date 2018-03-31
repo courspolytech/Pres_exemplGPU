@@ -17,3 +17,38 @@ L'environnement de développement pour CUDA doit être installé sur votre ordin
 Lien sur <<{sourcesdir}/hello_world.cu,hello_world.cu>>.
 [source,C]
 include::{sourcesdir}/hello_world.cu[]
+
+[source,sh]
+$ nvcc hello_world.cu -o hello_world
+$ ./hello_world
+
+Ce programme ne fait pas appel au GPU mais uniquement au compilateur nvcc sur du code C classique.
+Comme nvcc s'appuye sur gcc, il n'y a pas de problème pour compiler du C.
+
+L'exemple suivant permet d'introduire la création d'un kernel.
+Un kernel est compilé dans le code assembleur correspond au GPU cible.
+Là, nvcc réalise donc un travail spécifique.
+Ensuite, le noyau est lancé une fois sur un coeur du GPU.
+
+Lien sur <<{sourcesdir}/simple_kernel.cu,simple_kernel.cu>>.
+[source,C]
+include::{sourcesdir}/simple_kernel.cu[]
+
+
+L'étape suivante consiste à ajouter le passage de paramètre de l'hôte au kernel
+et de récupérer le résultat du calcul réalisé par ce kernel.
+Ainsi, on voit apparaitre clairement 2 des 3 étapes indispensables lors de l'utilisation d'un GPU.
+
+* L'allocation mémoire au niveau du GPU
+* Le démarrage du Kernel
+
+Lien sur <<{sourcesdir}/simple_kernel_params.cu,simple_kernel_params.cu>>.
+[source,C]
+include::{sourcesdir}/simple_kernel_params.cu[]
+
+L'exemple suivant illustre l'appel d'une fonction à l'intérieur d'un noyau.
+On utilise alors __device__.
+
+Lien sur <<{sourcesdir}/simple_device_call.cu,simple_device_call.cu>>.
+[source,C]
+include::{sourcesdir}/simple_device_call.cu[]
