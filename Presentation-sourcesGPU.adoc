@@ -25,6 +25,8 @@ $ ./hello_world
 Ce programme ne fait pas appel au GPU mais uniquement au compilateur nvcc sur du code C classique.
 Comme nvcc s'appuye sur gcc, il n'y a pas de problème pour compiler du C.
 
+=== Première utilisation du GPU
+
 L'exemple suivant permet d'introduire la création d'un kernel.
 Un kernel est compilé dans le code assembleur correspond au GPU cible.
 Là, nvcc réalise donc un travail spécifique.
@@ -52,3 +54,98 @@ On utilise alors __device__.
 Lien sur <<{sourcesdir}/simple_device_call.cu,simple_device_call.cu>>.
 [source,C]
 include::{sourcesdir}/simple_device_call.cu[]
+
+== Première utilisation du parallélisme
+
+Prenons un exemple simple : l'addition de 2 vecteurs.
+Le code C suivant se décompose en trois parties :
+
+* L'initialisation des vecteurs a et b,
+* Le calcul de la somme
+* l'affichage du résultat
+
+Ce qui nous intéresse est de paralléliser le calcul de la somme.
+Le GPU a vocation à être utilisé pour du massivement parallèle.
+Dans l'exemple, la taille des vecteurs est limité à 10, on souhaite donc faire les 10 additions en parallèle...
+La somme des vecteurs est donc isolée dans la fonction add().
+Dans la version CPU, celui-ci exécute une boucle de 1 à N pour réaliser successivement l'addition pour chaque composante.
+
+
+Lien sur <<{sourcesdir}/add_loop_cpu.cu,add_loop_cpu.cu>>.
+[source,C]
+include::{sourcesdir}/add_loop_cpu.cu[]
+
+La version parallèle avec le GPU consiste donc à réduire la fonction add à la somme sur une seule composante.
+En plus du code 'CPU' on retrouve donc :
+
+* l'allocation initiale de la mémoire GPU pour les 3 vecteurs a, b et c
+* l'initialisation de a et b par recopie des valeurs depuis le cpu
+* le démarrage de 10 threads, chacun effectuant 1 addition, dans 10 blocs différents
+* la recopie du vecteur c depuis la mémoire du GPU
+* la libération de l'espace mémoire utilisée dans le GPU.
+
+Lien sur <<{sourcesdir}/add_loop_gpu.cu,add_loop_gpu.cu>>.
+[source,C]
+include::{sourcesdir}/add_loop_gpu.cu[]
+
+Remarque : Un point important est de bien comprendre que les 2 uunités de traitement, CPU et GPU, vont devoir collaborer pour se répartir le travail.
+Cette répartition est à l'initiative du CPU.
+Il faut aussi gérer les deux espaces mémoires et quand le GPU exécute des threads, l'espace mémoire utilisé est celui du GPU car il ne peut accéder directement à la mémoire du CPU.
+
+[red]#*Il est bon de prendre dès le début les bonnes habitudes : distinguer le nom des variables du CPU du nom des variables du GPU !*#
+
+== Mise en oeuvre efficace
+
+L'intérêt du GPU apparait quand on utilise un grand nombre de threads en parallèle.
+On reprend donc l'exemple simple précédent, l'addition de deux vecteurs, et on répartit le calcul sur 128 threads.
+(On utilise toujours des puissances de 2)
+La fonction add est donc modifiée de manière à répartir les calculs des différentes composantes sur les threads.
+Chaque thread a un numéro différent des autres, et "saute" d'une composante à l'autre en ajoutant le nombre de threads.
+
+Lien sur <<{sourcesdir}/add_loop_long.cu,add_loop_long.cu>>.
+[source,C]
+include::{sourcesdir}/add_loop_long.cu[]
+
+Dans cet exemple, on retrouve les 5 étapes comme dans l'exemple précédent.
+On remarque que la dernière partie n'est qu'une vérification car elle consiste à recalculer la somme des composantes sur le CPU et à comparer le résultat avec le calcul GPU.
+
+
+L'exemple suivant reprend le même principe mais en utilisant des threads en parallèle au sein d'un block (et non des blocks en parallèle avec chacun 1 thread).
+
+Lien sur <<{sourcesdir}/add_loop_blocks.cu,add_loop_blocks.cu>>.
+[source,C]
+include::{sourcesdir}/add_loop_blocks.cu[]
+
+La meilleure solution est évidemment la dernière qui utilise un grand nombre de threads répartis entre plusieurs blocks contenant chacun plusieurs threads.
+
+Lien sur <<{sourcesdir}/add_loop_long_blocks.cu,add_loop_long_blocks.cu>>.
+[source,C]
+include::{sourcesdir}/add_loop_long_blocks.cu[]
+
+== Utilisation adaptée des différentes zones mémoires
+
+=== Mémoire partagée
+
+La mémoire partagée est accessible par tous les threads au sein du même block.
+La mémoire est accessible en lecture et écriture mais elle ne peut être adresssée depuis le CPU.
+C'est donc au sein du block que les threads doivent initialiser la mémoire partagée et, en fin de calcul, recopier le résultat dans la zone de mémoire globale du GPU.
+A partir de cette mémoire globale, le CPU pourra récupérer ce résultat final et le recopier dans la mémoire du CPU.
+
+* hist_cpu.cu
+* hist_gpu_gmem_atomics.cu
+* hist_gpu_shmem_atomics.cu
+* dot.cu
+
+=== Mémoire constante
+
+* ray.cu
+* ray_noconst.cu
+
+
+== Conclusion
+
+set_gpu.cu
+basic_double_stream_correct.cu
+multidevice.cu
+
+//enum_gpu.cu
