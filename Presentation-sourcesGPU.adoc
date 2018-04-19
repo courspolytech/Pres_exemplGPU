@@ -131,10 +131,62 @@ La mémoire est accessible en lecture et écriture mais elle ne peut être adres
 C'est donc au sein du block que les threads doivent initialiser la mémoire partagée et, en fin de calcul, recopier le résultat dans la zone de mémoire globale du GPU.
 A partir de cette mémoire globale, le CPU pourra récupérer ce résultat final et le recopier dans la mémoire du CPU.
 
-* hist_cpu.cu
-* hist_gpu_gmem_atomics.cu
-* hist_gpu_shmem_atomics.cu
-* dot.cu
+==== Calcul réparti mais résultat global
+
+L'exemple choisi pour mettre en évidence le travail collaboratif des threads, et le niveau de collaboration à mettre en oeuvre sur la base de l'utilisation adaptée des différentes zones mémoires est le calcul d'un histogramme.
+On prend un texte en entrée et on veut calculer le nombre d'occurences de chaque lettre.
+
+La version CPU parcourt donc séquentiellement l'ensemble du texte et, pour chaque lettre identifiée, incrémente son compteur dans un tableau "histo".
+
+Lien sur <<{sourcesdir}/hist_cpu.cu,hist_cpu.cu>>.
+[source,C]
+include::{sourcesdir}/hist_cpu.cu[]
+
+La version initiale adaptée pour le GPU consiste à identifier le noyau à paralléliser.
+On identifie rapidement que le texte en entrée peut être découpé en morceaux traités indépendamment par chaque thread.
+La mise en oeuvre est réalisée par "saut" ce qui permet de s'adapter implicitement à la taille de l'entrée et au nombre de threads.
+Par contre, comme le résultat est global, il faut que les compteurs "histo" soient partagés.
+Pour obtenir un résultat cohérent, on assure l'accès en exclusion mutuelle à "histo".
+
+Lien sur <<{sourcesdir}/hist_gpu_gmem_atomics.cu,hist_gpu_gmem_atomics.cu>>.
+[source,C]
+include::{sourcesdir}/hist_gpu_gmem_atomics.cu[]
+
+Cette mise en oeuvre montre des limites dues aux  performances d'accès à la mémoire globale lorsque de nombreux threads veulent y accéder simultanément.
+En effet, même si tous les threads n'accèdent pas simultanément à la même case mémoire, tous utilisent le même bus interne à la carte GPU.
+
+Pour accélérer le fonctionnement de cette mise en oeuvre parallèle, il faut permettre aux threads de ne pas être *trop* ralentis par l'accès à la mémoire.
+On peut envisager que chaque thread ait un tableau histo dans lequel il peut librement incrémenter ses compteurs mais cela utiliserait beaucoup de mémoire locale et conduirait à un gros travail de synthèse à la terminaison de tous les threads.
+La solution intermédiaire présentée ici, consiste à créer une zone partagée "shared" accessible en lecture / écriture à l'ensemble des threads d'un même block.
+
+Comme il y a moins de threads potentiellement intéressés par ce tableau, il y a moins de concurrence et comme le tableau est local au block, il est alloué dans une zone proche des threads.
+Globalement, l'accès est donc beaucoup plus rapide.
+Par contre, il ne faut pas oublier de consolider le résultat à la fin du block.
+Cette consolidation doit se faire en exclusion mutuelle.
+
+On voit apparaitre un équilibre à trouver entre le nombre de block (plus il est important et plus on sépare les traitements mais plus on aura de travail lors de la consolidation) et le nombre des threads (plus ils sont nombreux et plus on parallélise mais plus il y a de concurrence sur le tableau partagé).
+
+Remarque : le choix aui est fait ici est de créer autant de threads qu'il y a de symboles à compter (et donc de cases dans le tableau histogramme).
+Cela permet d'utiliser l'astuce suivante, chaque thread s'occupe de l'initialisation et de la consolidation d'une case du tableau.
+Chacune de ces opérations étant réalisée en parallèle sur les 256 threads.
+
+Lien sur <<{sourcesdir}/hist_gpu_shmem_atomics.cu,hist_gpu_shmem_atomics.cu>>.
+[source,C]
+include::{sourcesdir}/hist_gpu_shmem_atomics.cu[]
+
+==== Produit scalaire : calcul parallèle et réduction
+
+L'exemple suivant reprend l'intérêt de mettre en place une zone de mémoire partagée pour accélérer les traitements mais aussi affine le calcul d'une réduction puisqu'on veut un scalaire et non un tableau au final.
+
+Lien sur <<{sourcesdir}/dot.cu,dot.cu>>.
+[source,C]
+include::{sourcesdir}/dot.cu[]
+
+Normalement, sur la base de ces exemples, vous devez avoir compris :
+
+* [x] l'intérêt de la zone de mémoire partagée
+* [x] comment tirer partie de cette zone de mémoire à accès rapide mais locale au block
+* [x] Comment mettre en oeuvre une réduction (c'est plus compliqué qu'avec OpenMP)
 
 === Mémoire constante
 
