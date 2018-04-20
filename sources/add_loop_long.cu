@@ -1,4 +1,4 @@
-#include "./book.h"
+#include <stdio.h>
 #define N   (32 * 1024)
 __global__ void add( int *a, int *b, int *c ) {
     int tid = blockIdx.x;

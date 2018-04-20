@@ -1,4 +1,4 @@
-#include "./book.h"
+#include <stdio.h>
 #define N   10
 void add( int *a, int *b, int *c ) {
     int tid = 0;    // this is CPU zero, so we start at zero

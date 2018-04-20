@@ -190,14 +190,35 @@ Normalement, sur la base de ces exemples, vous devez avoir compris :
 
 === Mémoire constante
 
-* ray.cu
-* ray_noconst.cu
+Il existe une autre zone mémoire intéressante, la mémoire constante.
+De taille limitée, elle est accessible en lecture uniquement.
+Son accès est plus rapide parce qu'elle profite implicitement des zones de cache.
+Dès qu'un thread y accède, les autres threads du block n'auront pas besoin d'attendre un accès à la mémoire globale, la donnée se trouve accessible (et correcte parce que non modifiable) dans la zone de cache locale.
 
+L'exemple suiavnt montre un calcul d'image basé sur le lancement de rayon sur des sphères.
+Les caractéristiques des sphères sont positionnées dans la mémoire constante et tous les threads y accèdent rapidement.
+Les deux versions ci-dessous proposent la version sans mémoire constante et celle utilisant la mémoire constante.
+
+Lien sur <<{sourcesdir}/ray_noconst.cu,ray_noconst.cu>>.
+[source,C]
+include::{sourcesdir}/ray_noconst.cu[]
+
+
+Lien sur <<{sourcesdir}/ray.cu,ray.cu>>.
+[source,C]
+include::{sourcesdir}/ray.cu[]
 
 == Conclusion
 
-set_gpu.cu
-basic_double_stream_correct.cu
-multidevice.cu
+Un complément à regarder est la manière de masquer les tranferts avec le GPU en utilisant les "streams".
+Du point de vue de l'optimisation globale, on peut avoir intérêt à découper un flux de donner en deux (ou plus) et ainsi cacher une partie des transferts vers le GPU (ou depuis le GPU) par les traitements ralisés sur l'autre moitié du flux.
+
+* basic_double_stream_correct.cu
+
+Le dernier exemple important montre comment tirer partie de plusieurs GPU présents sur la machine et donc comment associer les demandes de traitements à un GPU en particulier.
+On utilise cudaSetDevice() pour préciser le GPU concerné par les instructions suivantes.
+Les autres éléments permettent de séparer les données pour chaque stream et associe un thread à chaque GPU pour associer les synchronisations liés à un GPU avec un seul thread.
+
+* multidevice.cu
 
 //enum_gpu.cu
