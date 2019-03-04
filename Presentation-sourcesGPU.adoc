@@ -22,7 +22,7 @@ include::{sourcesdir}/hello_world.cu[]
 $ nvcc hello_world.cu -o hello_world
 $ ./hello_world
 
-Ce programme ne fait pas appel au GPU mais uniquement au compilateur nvcc sur du code C classique.
+Ce programme ne fait pas appel au GPU mais uniquement au compilateur nvcc appliqué à du code C classique.
 Comme nvcc s'appuye sur gcc, il n'y a pas de problème pour compiler du C.
 
 === Première utilisation du GPU
@@ -36,20 +36,26 @@ Lien sur <<{sourcesdir}/simple_kernel.cu,simple_kernel.cu>>.
 [source,C]
 include::{sourcesdir}/simple_kernel.cu[]
 
+Lors de l'exécution des deux programmes hello_world et simple_kernel, le résultat est le même : affichage de Hello World!.
+
+Par contre, si vous prenez le temps de mesurer le temps d'exécution de ces deux programmes, vous pourrez observer une différence significative : simple_kernel prend du temps pour transférer le code de la fonction kernel sur le GPU, créer un thread sur le GPU et exécuter ce thread (qui ne fait rien).
 
 L'étape suivante consiste à ajouter le passage de paramètre de l'hôte au kernel
 et de récupérer le résultat du calcul réalisé par ce kernel.
-Ainsi, on voit apparaitre clairement 2 des 3 étapes indispensables lors de l'utilisation d'un GPU.
+Ainsi, on voit apparaître clairement 2 des 3 étapes indispensables lors de l'utilisation d'un GPU.
 
 * L'allocation mémoire au niveau du GPU
 * Le démarrage du Kernel
+* La récupération du résultat du Kernel
+
+Notez bien l'utilisation de *c* et de *dev_c* identifiant 2 espaces mémoires correspondant à la même variable fonctionnelle.
 
 Lien sur <<{sourcesdir}/simple_kernel_params.cu,simple_kernel_params.cu>>.
 [source,C]
 include::{sourcesdir}/simple_kernel_params.cu[]
 
 L'exemple suivant illustre l'appel d'une fonction à l'intérieur d'un noyau.
-On utilise alors __device__.
+On utilise alors __device__ car cette fonction ne peut pas être appelée directement par le CPU. Elle sera résidente sur le GPU et uniquement appelable par du code s'exécutant sur le GPU.
 
 Lien sur <<{sourcesdir}/simple_device_call.cu,simple_device_call.cu>>.
 [source,C]
@@ -61,7 +67,7 @@ Prenons un exemple simple : l'addition de 2 vecteurs.
 Le code C suivant se décompose en trois parties :
 
 * L'initialisation des vecteurs a et b,
-* Le calcul de la somme
+* Le calcul du vecteur c somme de a et de b
 * l'affichage du résultat
 
 Ce qui nous intéresse est de paralléliser le calcul de la somme.
