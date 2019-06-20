@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include "book.h"
 #define SIZE    (100*1024*1024)
 __global__ void histo_kernel( unsigned char *buffer,
                               long size,

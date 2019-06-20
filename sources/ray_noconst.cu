@@ -1,6 +1,6 @@
 #include "cuda.h"
-#include "../common/book.h"
-#include "../commonMac/cpu_bitmap.h"
+#include "./book.h"
+#include "./cpu_bitmap.h"
 #define DIM 1024
 #define rnd( x ) (x * rand() / RAND_MAX)
 #define INF     2e10f

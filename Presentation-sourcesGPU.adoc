@@ -133,14 +133,36 @@ include::{sourcesdir}/add_loop_long_blocks.cu[]
 === Mémoire partagée
 
 La mémoire partagée est accessible par tous les threads au sein du même block.
-La mémoire est accessible en lecture et écriture mais elle ne peut être adresssée depuis le CPU.
+La mémoire est accessible en lecture et écriture mais elle ne peut être adressée depuis le CPU.
 C'est donc au sein du block que les threads doivent initialiser la mémoire partagée et, en fin de calcul, recopier le résultat dans la zone de mémoire globale du GPU.
 A partir de cette mémoire globale, le CPU pourra récupérer ce résultat final et le recopier dans la mémoire du CPU.
+
+L'exemple suivant permet de calculer le produit scalaire de deux vecteurs.
+
+Lien sur <<{sourcesdir}/dot_cpu.cu,dot_cpu.cu>>.
+[source,C]
+include::{sourcesdir}/dot_cpu.cu[]
+
+La mise en oeuvre parallèle sur GPU passe par les différentes étapes mentionnées précédemment :
+
+* Allocation mémoire sur GPU
+* Initialisation de celle-ci
+* Lancement des threads
+* Recopie du résultat
+* et achèvement du calcul
+
+Lien sur <<{sourcesdir}/dot.cu,dot.cu>>.
+[source,C]
+include::{sourcesdir}/dot.cu[]
+
+Cet exemple utilise une zone de mémoire Shared pour permettre aux threads au sein du même block, de calculer une partie du produit scalaire (celle correspondant au traitement des threads au sein du block).
+
+La mise en oeuvre d'une réduction (au sein du block) est proposée.
 
 ==== Calcul réparti mais résultat global
 
 L'exemple choisi pour mettre en évidence le travail collaboratif des threads, et le niveau de collaboration à mettre en oeuvre sur la base de l'utilisation adaptée des différentes zones mémoires est le calcul d'un histogramme.
-On prend un texte en entrée et on veut calculer le nombre d'occurences de chaque lettre.
+On prend un texte en entrée et on veut calculer le nombre d’occurrences de chaque lettre.
 
 La version CPU parcourt donc séquentiellement l'ensemble du texte et, pour chaque lettre identifiée, incrémente son compteur dans un tableau "histo".
 

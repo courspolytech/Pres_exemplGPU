@@ -1,6 +1,6 @@
 #include "cuda.h"
-#include "../common/book.h"
-#include "../commonMac/cpu_bitmap.h"
+#include "./book.h"
+#include "./cpu_bitmap.h"
 #define DIM 1024
 #define rnd( x ) (x * rand() / RAND_MAX)
 #define INF     2e10f
@@ -95,7 +95,7 @@ int main( void ) {
     printf( "Time to generate:  %3.1f ms\n", elapsedTime );
     cudaEventDestroy( start );
     cudaEventDestroy( stop );
-    cudaFree( dev_bitmap )
+    cudaFree( dev_bitmap );
     // display
     bitmap.display_and_exit();
 }
